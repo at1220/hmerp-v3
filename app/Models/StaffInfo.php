@@ -15,8 +15,21 @@ class StaffInfo extends Model implements Auditable
 
     protected $table = 'staff_info';
 
+    protected $casts = [
+        'personnel_management' => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($staff) {
+            $staff->phone = $staff->user->email;
+        });
+
     }
 }

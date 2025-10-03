@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -22,11 +21,7 @@ class User extends Authenticatable implements Auditable
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    protected $guarded = [];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -34,7 +29,6 @@ class User extends Authenticatable implements Auditable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
         'remember_token',
     ];
 
@@ -48,7 +42,6 @@ class User extends Authenticatable implements Auditable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'first_password' => 'hashed',
             'roles' => 'array',
         ];
     }
@@ -57,12 +50,12 @@ class User extends Authenticatable implements Auditable
         'permissions' => 'array',
     ];
 
-    public function staffInfo()
+    public function staff()
     {
         return $this->hasOne(StaffInfo::class);
     }
 
-    public function customerInfo()
+    public function customer()
     {
         return $this->hasOne(CustomerInfo::class);
     }
@@ -76,15 +69,14 @@ class User extends Authenticatable implements Auditable
     {
         parent::boot();
         static::creating(function ($user) {
-            $plainPassword = Str::random(10);
-            $user->first_password = Hash::make($plainPassword);
+            $user->first_password = Str::random(10);
             if (empty($user->role)) {
                 $user->role = 'admin';
             }
         });
         static::deleting(function ($user) {
-            $user->customerInfo()->delete();
-            $user->staffInfo()->delete();
+            $user->staff()->delete();
+            $user->customer()->delete();
             $user->contactPersons()->delete();
         });
     }

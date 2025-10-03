@@ -86,7 +86,7 @@ return new class extends Migration
             $table->boolean('outside_truck')->default(false)->comment('Chạy xe ngoài');
             $table->boolean('has_evaluate')->default(true)->comment('Đánh giá tháng ');
             $table->integer('personal_deduction')->nullable()->comment('Số người phụ thuộc giảm trừ gia cảnh');
-            $table->enum('deparment', [
+            $table->enum('department', [
                 'sale_1', 'sale_2', 'sale_3', 'hr', 'accountant', 'dev', 'markerting',
                 'dispatcher', 'parking_1', 'parking_2', 'parking_3', 'legal', 'garage',
 

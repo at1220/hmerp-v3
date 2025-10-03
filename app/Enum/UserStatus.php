@@ -27,4 +27,5 @@ enum UserStatus: string implements HasLabel
             self::Break => 'Tạm nghỉ',
         };
     }
+
 }
