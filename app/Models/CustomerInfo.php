@@ -19,4 +19,13 @@ class CustomerInfo extends Model implements Auditable
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($customer) {
+            $customer->phone = $customer->user->email;
+        });
+
+    }
 }

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->jsonb('cared_by')->nullable();
             $table->boolean('has_contact')->nullable();
             $table->integer('date_of_payment')->nullable()->default(7)->comment('Số ngày quá hạn thanh toán');
-            $table->enum('enum', ['green', 'yellow', 'red'])->nullable()->default('green')->comment('trạng thái cảnh báo nợ');
+            $table->enum('noiti', ['green', 'yellow', 'red'])->nullable()->default('green')->comment('trạng thái cảnh báo nợ');
             $table->text('note')->nullable();
             $table->timestamps();
             $table->softDeletes();

@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Enum\UserStatus;
-use App\Models\StaffInfo;
+use App\Filament\Resources\Users\Schemas\UserForm;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -50,7 +50,22 @@ class UsersTable
             ])
 
             ->recordActions([
-                EditAction::make(),
+                EditAction::make('editStaff')
+                   // ->label('Cập nhật nhân viên')
+                    ->modalHeading('Cập nhật nhân viên')
+                    ->schema(array_merge(
+                        UserForm::baseComponents(),
+                        [UserForm::staffSection()]
+                    ))
+                    ->visible(fn ($record) => $record->role == 'admin'),
+                EditAction::make('editCustomer')
+                    // ->label('Thêm khách hàng')
+                    ->modalHeading('Cập nhật khách hàng')
+                    ->schema(array_merge(
+                        UserForm::baseComponents(),
+                        [UserForm::customerSection()]
+                    ))
+                    ->visible(fn ($record) => $record->role != 'admin'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
