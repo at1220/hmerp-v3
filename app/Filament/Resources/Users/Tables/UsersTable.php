@@ -10,6 +10,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
@@ -27,6 +28,10 @@ class UsersTable
                 TextColumn::make('email_verified_at')
                     ->dateTime()
                     ->sortable(),
+                TextColumn::make('customer.is_company')->label('loại khách')
+                    ->visible(fn ($livewire): bool => $livewire->activeTab === 'customer'),
+                TextColumn::make('staff.outside_truck')->label('xe ngoài')
+                    ->visible(fn ($livewire): bool => $livewire->activeTab === 'staff'),
                 TextColumn::make('role')
                     ->searchable(),
                 TextColumn::make('status')
@@ -46,7 +51,22 @@ class UsersTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                TrashedFilter::make(),
+                // TrashedFilter::make(),
+                SelectFilter::make('outside_truck')
+                    ->label('Loại xe')
+                    ->options([
+                        1 => 'Xe ngoài',
+                        0 => 'Xe công ty',
+                    ])
+                    ->query(function ($query, $value) {
+                        if (filled($value)) {
+                            $query->whereHas('staff', function ($q) use ($value) {
+                                $q->where('outside_truck', $value);
+                            });
+                        }
+                    })
+                    ->visible(fn ($livewire): bool => $livewire->activeTab === 'staff'),
+
             ])
 
             ->recordActions([

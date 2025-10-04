@@ -6,10 +6,29 @@ use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\UserResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class ListUsers extends ListRecords
 {
     protected static string $resource = UserResource::class;
+
+    public function getTabs(): array
+    {
+        $currentUser = Auth::user()->role;
+
+        return [
+
+            'staff' => Tab::make('Nhân viên')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('role', 'admin'))
+            // ->visible(fn () => $currentUser != 'admin')
+            ,
+            'customer' => Tab::make('Khách hàng')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('role', 'customer')),
+
+        ];
+    }
 
     protected function getHeaderActions(): array
     {
