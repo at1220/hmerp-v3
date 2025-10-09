@@ -43,6 +43,7 @@ class ListUsers extends ListRecords
                 ->mutateDataUsing(function (array $data): array {
                     // password mặc định
                     $data['password'] = '123';
+                    unset($data['staff']);
 
                     return $data;
                 }),
@@ -56,6 +57,7 @@ class ListUsers extends ListRecords
 
                 ->mutateDataUsing(function (array $data): array {
                     $data['password'] = '123';
+                    unset($data['staff']);
 
                     return $data;
                 }),

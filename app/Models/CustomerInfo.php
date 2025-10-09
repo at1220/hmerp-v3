@@ -15,6 +15,13 @@ class CustomerInfo extends Model implements Auditable
 
     protected $table = 'customer_info';
 
+    protected function casts(): array
+    {
+        return [
+            'cared_by' => 'array',
+        ];
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

@@ -33,13 +33,13 @@ class UserForm
                 ->label('SĐT đăng nhập')
                 ->tel()
                 ->required()
-                ->visible(fn (string $context): bool => $context === 'createStaff' || $context === 'createCustomer'),
+                ->visible(fn (string $context): bool => $context == 'createStaff' || $context == 'createCustomer'),
 
             TextInput::make('email')
                 ->label('SĐT đăng nhập')
                 ->disabled()
                 ->dehydrated(false)
-                ->visible(fn (string $context): bool => $context === 'editStaff' || $context === 'editCustomer'),
+                ->visible(fn (string $context): bool => $context == 'editStaff' || $context == 'editCustomer'),
 
             // TextInput::make('first_password')
             //     ->label('Mật khẩu ban đầu')
@@ -193,6 +193,10 @@ class UserForm
         return Section::make('Thông tin khách hàng')
             ->relationship('customer')
             ->schema([
+                TextInput::make('phone')
+                    ->label('Sđt')
+                    ->tel()
+                    ->required(),
                 TextInput::make('short_name')
                     ->label('Tên rút gọn'),
                 TextInput::make('address')
@@ -249,7 +253,7 @@ class UserForm
     {
         return $schema->components(array_merge(
             self::baseComponents(),
-            [self::staffSection(), self::customerSection()] // mặc định nếu bạn muốn
+            [] // mặc định nếu bạn muốn
         ));
     }
 }
