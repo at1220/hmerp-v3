@@ -99,40 +99,22 @@ if (! function_exists('highlightSearch')) {
 }
 function updateOrderForm(callable $set, callable $get): void
 {
-    // Tính giá cước có VAT
-    $price = (float) $get('price'); // Giá cước
-    $vat_rate_price = (float) $get('vat_rate_price');
-    // tính giá bốc xếp
-    $truckload_price = (float) $get('truckload_price'); // Giá cước
-    $vat_rate_truckload = (float) $get('vat_rate_truckload');
-    // tính goá quay đầu
-    $price_back = (float) $get('price_back'); // Giá cước
-    $vat_rate_price_back = (float) $get('vat_rate_price_back');
-    // % VAT cho giá cước
-    $all_price = $price * (1 + ($vat_rate_price / 100));
-    $all_truckload = $truckload_price * (1 + ($vat_rate_truckload / 100));
-    $all_priceback = $price_back * (1 + ($vat_rate_price_back / 100));
+    $base_price = (float) str_replace(',', '', $get('base_price')); // Giá cước
+    dd($base_price);
+    $vat_percentage_base = (float) str_replace(',', '', $get('vat_percentage')); // % VAT cho giá cước
+    $total_base_price = $base_price * (1 + ($vat_percentage_base / 100));
+
     // Tính tổng cho các dịch vụ đi kèm
     $total_extra_services = 0;
-    $all_service_price = 0;
-    $services = $get('services') ?? $get('../../services') ?? [];
-
-    foreach ($services as $service) {
-        $service_price = (float) $service['price']; // Giá dịch vụ
-        $vat_percentage_service = (float) $service['vat_rate']; // % VAT của dịch vụ
+    $extraServices = $get('extraServices') ? $get('extraServices') : [];
+    foreach ($extraServices as $extra_service) {
+        $service_price = (float) str_replace(',', '', $extra_service['service_price']); // Giá dịch vụ
+        $vat_percentage_service = (float) str_replace(',', '', $extra_service['vat_percentage']); // % VAT của dịch vụ
         $total_extra_services += $service_price * (1 + ($vat_percentage_service / 100));
-        $all_service_price += $service_price;
     }
 
-    // Tổng cước
-    $total_price = $price + $truckload_price + $price_back + $all_service_price;
     // Tổng tiền cần thanh toán
-    $total_paid = $all_price + $all_truckload + $all_priceback + $total_extra_services;
-    $set('total_paid', ($total_paid));
-    $set('total_price', ($total_price));
-    // 2 trường
-
-    $set('total_amount_service', ($all_service_price));
-    $set('vat_amount_service', ($total_extra_services - $all_service_price));
+    $total_amount = $total_base_price + $total_extra_services;
+    $set('total_amount', number_format($total_amount));
 
 }

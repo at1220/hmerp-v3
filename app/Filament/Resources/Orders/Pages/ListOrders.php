@@ -21,7 +21,7 @@ class ListOrders extends ListRecords
                 ->modalHeading('Tạo đơn hàng chuyến')
                 ->schema(array_merge(
                     OrderForm::baseComponents(),
-                    [OrderForm::tripSection(), OrderForm::serviceSection(), OrderForm::billingTripSection()]
+                    [OrderForm::tripSection(), OrderForm::billingTripSection()]// OrderForm::serviceSection(),
                 ))
                 ->mutateDataUsing(function (array $data): array {
                     // password mặc định
