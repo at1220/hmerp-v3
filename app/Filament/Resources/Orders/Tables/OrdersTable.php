@@ -86,7 +86,7 @@ class OrdersTable
                         ->modalHeading('Chi tiết đơn')
                         ->schema(array_merge(
                             OrderForm::baseComponents(),
-                            [OrderForm::tripSection()]
+                            [OrderForm::tripSection(), OrderForm::billingTripSection()]
                         ))
                         ->visible(fn ($record) => $record->type == Type::Trip)
                         ->mutateRecordDataUsing(function (array $data): array {

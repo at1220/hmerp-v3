@@ -277,14 +277,13 @@ class OrderForm
     {
         return
         Section::make('💰 Thông tin thanh toán & Dịch vụ')
-            ->collapsible()
             ->schema([
 
                 // ====== NHÓM BILL (hasOne) ======
                 Fieldset::make('Giá cước & VAT')
                     ->relationship('bill') // 👈 hasOne(OrderBilling)
                     ->reactive() // 🔥 ép cả nhóm `bill` trở thành reactive
-                    ->afterStateUpdated(fn (callable $set, callable $get) => static::updateTotals($set, $get))
+                    ->afterStateUpdated(fn (callable $set, callable $get) => updateTotals($set, $get))
                     ->schema([
                         TextInput::make('price')
                             ->label('Giá cước')
@@ -292,14 +291,14 @@ class OrderForm
                             ->suffix('đ')
                             ->required()
                             ->live(onBlur: true)
-                            // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                            // ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get))
                             ->dehydrateStateUsing(fn ($state) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $state)),
 
                         TextInput::make('vat_rate_price')
                             ->label('% VAT cước')
                             ->numeric()
                             ->live(onBlur: true)
-                        // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                        // ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get))
                         ,
 
                         TextInput::make('truckload_price')
@@ -307,14 +306,14 @@ class OrderForm
                             ->mask(RawJs::make('$money($input)'))
                             ->suffix('đ')
                             ->live(onBlur: true)
-                            // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                            // ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get))
                             ->dehydrateStateUsing(fn ($state) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $state)),
 
                         TextInput::make('vat_rate_truckload')
                             ->label('% VAT bốc xếp')
                             ->numeric()
                             ->live(onBlur: true)
-                        // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                        // ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get))
                         ,
 
                         TextInput::make('price_back')
@@ -322,14 +321,14 @@ class OrderForm
                             ->mask(RawJs::make('$money($input)'))
                             ->suffix('đ')
                             ->live(onBlur: true)
-                           // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                           // ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get))
                             ->dehydrateStateUsing(fn ($state) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $state)),
 
                         TextInput::make('vat_rate_price_back')
                             ->label('% VAT quay đầu')
                             ->numeric()
                             ->live(onBlur: true)
-                        // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                        // ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get))
                         ,
                     ]),
 
@@ -342,8 +341,8 @@ class OrderForm
                         TableColumn::make('Dịch vụ'),
                         TableColumn::make('Giá dịch vụ'),
                         TableColumn::make('% Vat'),
-                        // TableColumn::make('Số hoá đơn'),
-                        // TableColumn::make('Ghi chú'),
+                        TableColumn::make('Số hoá đơn'),
+                        TableColumn::make('Ghi chú'),
 
                     ])
                     ->schema([
@@ -359,13 +358,18 @@ class OrderForm
                             ->suffix('đ')
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get)),
+                            ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get))
+                            ->dehydrateStateUsing(fn ($state) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $state)),
 
                         TextInput::make('vat_rate')
                             ->label('% VAT')
                             ->numeric()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get)),
+                            ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get)),
+                        TextInput::make('invoice_number')
+                            ->label('Số hoá đơn'),
+                        TextInput::make('note')
+                            ->label('Ghi chú'),
                     ])
                     ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
                         $toNumber = fn ($v) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $v);
@@ -374,7 +378,7 @@ class OrderForm
 
                         return $data;
                     })
-                    ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get)),
+                    ->afterStateUpdated(fn ($set, $get) => updateTotals($set, $get)),
 
                 // ====== NHÓM TỔNG ======
                 Fieldset::make('Tạm tính')
@@ -411,46 +415,6 @@ class OrderForm
                     ]),
             ]);
 
-    }
-
-    protected static function updateTotals(callable $set, callable $get): void
-    {
-        $toNumber = fn ($value) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $value);
-
-        $bill = $get('bill') ?? [];
-        $services = $get('services') ?? [];
-        $getBillValue = fn ($key) => $toNumber(data_get($bill, $key, 0));
-
-        $price = $getBillValue('price');
-
-        $truckload = $getBillValue('truckload_price');
-        $priceBack = $getBillValue('price_back');
-
-        $vatPrice = 1 + ((float) data_get($bill, 'vat_rate_price', 0) / 100);
-        $vatTruckload = 1 + ((float) data_get($bill, 'vat_rate_truckload', 0) / 100);
-        $vatPriceBack = 1 + ((float) data_get($bill, 'vat_rate_price_back', 0) / 100);
-
-        // Tính repeater
-        $totalService = 0;
-        $vatService = 0;
-        foreach ($services as $s) {
-            $priceService = $toNumber($s['price'] ?? 0);
-            $vat = (float) ($s['vat_rate'] ?? 0);
-            $totalService += $priceService;
-            $vatService += $priceService * $vat / 100;
-        }
-
-        $totalPrice = $price + $truckload + $priceBack + $totalService;
-        $totalPaid = ($price * $vatPrice)
-            + ($truckload * $vatTruckload)
-            + ($priceBack * $vatPriceBack)
-            + $totalService + $vatService;
-
-        // 🟢 Ghi trực tiếp từng field thay vì set toàn mảng bill
-        $set('bill.total_amount_service', number_format($totalService));
-        $set('bill.vat_amount_service', number_format($vatService));
-        $set('bill.total_price', number_format($totalPrice));
-        $set('bill.total_paid', number_format($totalPaid));
     }
 
     public static function containerSection(): Section

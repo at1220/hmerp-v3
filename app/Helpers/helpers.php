@@ -97,24 +97,42 @@ if (! function_exists('highlightSearch')) {
             e($after);
     }
 }
-function updateOrderForm(callable $set, callable $get): void
+function updateTotals(callable $set, callable $get): void
 {
-    $base_price = (float) str_replace(',', '', $get('base_price')); // Giá cước
-    dd($base_price);
-    $vat_percentage_base = (float) str_replace(',', '', $get('vat_percentage')); // % VAT cho giá cước
-    $total_base_price = $base_price * (1 + ($vat_percentage_base / 100));
+    $toNumber = fn ($value) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $value);
 
-    // Tính tổng cho các dịch vụ đi kèm
-    $total_extra_services = 0;
-    $extraServices = $get('extraServices') ? $get('extraServices') : [];
-    foreach ($extraServices as $extra_service) {
-        $service_price = (float) str_replace(',', '', $extra_service['service_price']); // Giá dịch vụ
-        $vat_percentage_service = (float) str_replace(',', '', $extra_service['vat_percentage']); // % VAT của dịch vụ
-        $total_extra_services += $service_price * (1 + ($vat_percentage_service / 100));
+    $bill = $get('bill') ?? [];
+    $services = $get('services') ?? [];
+    $getBillValue = fn ($key) => $toNumber(data_get($bill, $key, 0));
+
+    $price = $getBillValue('price');
+
+    $truckload = $getBillValue('truckload_price');
+    $priceBack = $getBillValue('price_back');
+
+    $vatPrice = 1 + ((float) data_get($bill, 'vat_rate_price', 0) / 100);
+    $vatTruckload = 1 + ((float) data_get($bill, 'vat_rate_truckload', 0) / 100);
+    $vatPriceBack = 1 + ((float) data_get($bill, 'vat_rate_price_back', 0) / 100);
+
+    // Tính repeater
+    $totalService = 0;
+    $vatService = 0;
+    foreach ($services as $s) {
+        $priceService = $toNumber($s['price'] ?? 0);
+        $vat = (float) ($s['vat_rate'] ?? 0);
+        $totalService += $priceService;
+        $vatService += $priceService * $vat / 100;
     }
 
-    // Tổng tiền cần thanh toán
-    $total_amount = $total_base_price + $total_extra_services;
-    $set('total_amount', number_format($total_amount));
+    $totalPrice = $price + $truckload + $priceBack + $totalService;
+    $totalPaid = ($price * $vatPrice)
+        + ($truckload * $vatTruckload)
+        + ($priceBack * $vatPriceBack)
+        + $totalService + $vatService;
 
+    // 🟢 Ghi trực tiếp từng field thay vì set toàn mảng bill
+    $set('bill.total_amount_service', number_format($totalService));
+    $set('bill.vat_amount_service', number_format($vatService));
+    $set('bill.total_price', number_format($totalPrice));
+    $set('bill.total_paid', number_format($totalPaid));
 }
