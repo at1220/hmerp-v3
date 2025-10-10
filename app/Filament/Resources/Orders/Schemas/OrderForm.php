@@ -283,49 +283,56 @@ class OrderForm
                 // ====== NHÓM BILL (hasOne) ======
                 Fieldset::make('Giá cước & VAT')
                     ->relationship('bill') // 👈 hasOne(OrderBilling)
+                    ->reactive() // 🔥 ép cả nhóm `bill` trở thành reactive
+                    ->afterStateUpdated(fn (callable $set, callable $get) => static::updateTotals($set, $get))
                     ->schema([
                         TextInput::make('price')
                             ->label('Giá cước')
                             ->mask(RawJs::make('$money($input)'))
+                            ->stripCharacters(',')
+                            ->numeric()
                             ->suffix('đ')
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                            // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
                             ->dehydrateStateUsing(fn ($state) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $state)),
 
                         TextInput::make('vat_rate_price')
                             ->label('% VAT cước')
                             ->numeric()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get)),
+                        // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                        ,
 
                         TextInput::make('truckload_price')
                             ->label('Giá bốc xếp')
                             ->mask(RawJs::make('$money($input)'))
                             ->suffix('đ')
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                            // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
                             ->dehydrateStateUsing(fn ($state) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $state)),
 
                         TextInput::make('vat_rate_truckload')
                             ->label('% VAT bốc xếp')
                             ->numeric()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get)),
+                        // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                        ,
 
                         TextInput::make('price_back')
                             ->label('Giá quay đầu')
                             ->mask(RawJs::make('$money($input)'))
                             ->suffix('đ')
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                           // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
                             ->dehydrateStateUsing(fn ($state) => (float) str_replace([',', '.', 'đ', ' '], '', (string) $state)),
 
                         TextInput::make('vat_rate_price_back')
                             ->label('% VAT quay đầu')
                             ->numeric()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get)),
+                        // ->afterStateUpdated(fn ($set, $get) => self::updateTotals($set, $get))
+                        ,
                     ]),
 
                 // ====== NHÓM SERVICES (hasMany) ======
@@ -414,10 +421,10 @@ class OrderForm
 
         $bill = $get('bill') ?? [];
         $services = $get('services') ?? [];
-
         $getBillValue = fn ($key) => $toNumber(data_get($bill, $key, 0));
 
         $price = $getBillValue('price');
+
         $truckload = $getBillValue('truckload_price');
         $priceBack = $getBillValue('price_back');
 
