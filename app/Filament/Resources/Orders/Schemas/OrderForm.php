@@ -289,8 +289,6 @@ class OrderForm
                         TextInput::make('price')
                             ->label('Giá cước')
                             ->mask(RawJs::make('$money($input)'))
-                            ->stripCharacters(',')
-                            ->numeric()
                             ->suffix('đ')
                             ->required()
                             ->live(onBlur: true)
