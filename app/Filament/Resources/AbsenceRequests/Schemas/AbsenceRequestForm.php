@@ -184,6 +184,7 @@ class AbsenceRequestForm
 
     public static function configure(Schema $schema, string $type = 'one_day'): Schema
     {
+
         return match ($type) {
             'one_day' => $schema->components([
                 self::oneDaySection(),
@@ -194,7 +195,14 @@ class AbsenceRequestForm
                 self::multiDaysSection(),
                 self::absenceDaySection(),
             ]),
+            'create_multi_day' => $schema->components([
+                self::multiDaysSection(),
 
+            ]),
+            'create_one_day' => $schema->components([
+                self::oneDaySection(),
+
+            ]),
             default => $schema->components([]),
         };
     }

@@ -23,7 +23,7 @@ class ListAbsenceRequests extends ListRecords
         return [
             CreateAction::make('create_one_day')
                 ->label('Nghỉ 1 ngày')
-                ->schema(fn () => AbsenceRequestForm::configure(app(Schema::class), 'one_day')->getComponents())
+                ->schema(fn () => AbsenceRequestForm::configure(app(Schema::class), 'create_one_day')->getComponents())
                 ->mutateDataUsing(function (array $data): array {
                     $data['to_date'] = $data['from_date'];
                     $data['user_id'] = Auth::id();
@@ -58,7 +58,7 @@ class ListAbsenceRequests extends ListRecords
 
             CreateAction::make('create_multi_day')
                 ->label('Nghỉ nhiều ngày')
-                ->schema(fn () => AbsenceRequestForm::configure(app(Schema::class), 'multi_day')->getComponents())
+                ->schema(fn () => AbsenceRequestForm::configure(app(Schema::class), 'create_multi_day')->getComponents())
                 ->mutateDataUsing(function (array $data): array {
                     $from = Carbon::parse($data['from_date']); // từ form
                     $to = Carbon::parse($data['to_date']);   // từ form
