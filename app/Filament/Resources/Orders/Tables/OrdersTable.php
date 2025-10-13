@@ -96,7 +96,7 @@ class OrdersTable
                     EditAction::make('editTrip')
                         ->label('Đơn hàng chuyến')
                         ->modalDescription('Đây là sửa')
-                        ->modalHeading('Tạo đơn hàng chuyến')
+                        ->modalHeading('Cập nhật đơn hàng chuyến')
                         ->schema(array_merge(
                             OrderForm::baseComponents(),
                             [OrderForm::tripSection(), OrderForm::billingTripSection()]// OrderForm::serviceSection(),
@@ -105,7 +105,7 @@ class OrdersTable
 
                     EditAction::make('editContainer')
                         ->label('Đơn hàng container')
-                        ->modalHeading('Tạo đơn hàng container')
+                        ->modalHeading('Cập nhật đơn hàng container')
                         ->schema(array_merge(
                             OrderForm::baseComponents(),
                             [OrderForm::containerSection()]

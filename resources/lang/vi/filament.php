@@ -17,5 +17,10 @@ return [
             'plural_label' => 'Danh sách dịch vụ',
             'navigation_label' => 'Dịch vụ',
         ],
+        'absence' => [
+            'label' => 'Nghỉ phép',
+            'plural_label' => 'Danh sách đơn nghỉ phép',
+            'navigation_label' => 'Đơn nghỉ phép',
+        ],
     ],
 ];
