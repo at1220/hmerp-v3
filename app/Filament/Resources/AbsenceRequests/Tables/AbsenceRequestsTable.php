@@ -124,12 +124,20 @@ class AbsenceRequestsTable
                             $record->part_of_day = $record->day->first()?->part_of_day;
                         })
                         ->mutateDataUsing(function (array $data): array {
-                            $data['from_date'] = $data['from_date'];
+                            $fromDate = Carbon::parse($data['from_date']);
+
                             $data['to_date'] = $data['from_date'];
                             $data['user_id'] = Auth::id();
                             $data['created_by'] = Auth::id();
                             $data['status'] = 'pending';
-                            $data['total_day'] = $data['part_of_day'] == 'day' ? 1 : 0.5;
+
+                            // Nếu là Thứ 7 => total_day = 0.5
+                            if ($fromDate->dayOfWeek === Carbon::SATURDAY) {
+                                $data['total_day'] = 0.5;
+                            } else {
+                                // Còn lại: full day hay half day theo part_of_day
+                                $data['total_day'] = $data['part_of_day'] === 'day' ? 1 : 0.5;
+                            }
 
                             return $data;
                         })
@@ -172,9 +180,17 @@ class AbsenceRequestsTable
                             $period = CarbonPeriod::create($from, $to);
 
                             // lọc ra ngày không phải Chủ nhật
-                            $totalDays = collect($period)
-                                ->filter(fn ($date) => $date->dayOfWeek !== Carbon::SUNDAY)
-                                ->count();
+                            $workingDays = collect($period)
+                                ->filter(fn ($date) => $date->dayOfWeek !== Carbon::SUNDAY);
+
+                            // đếm tổng ngày (không bao gồm Chủ nhật)
+                            $totalDays = $workingDays->count();
+
+                            // nếu có ít nhất 1 ngày Thứ 7 thì +0.5
+                            if ($workingDays->contains(fn ($date) => $date->dayOfWeek === Carbon::SATURDAY)) {
+                                $totalDays += 0.5;
+                            }
+
                             $data['user_id'] = Auth::id();
                             $data['created_by'] = Auth::id();
                             $data['status'] = 'pending';
@@ -194,20 +210,40 @@ class AbsenceRequestsTable
                             $period = CarbonPeriod::create($from, $to);
 
                             AbsenceDay::where('absence_id', $record->id)->forceDelete();
+
+                            $user = $record->user; // giả sử model AbsenceRequest có quan hệ user()
+                            $role = $user->role ?? null; // hoặc $user->position, tùy cột bạn đặt
+
                             $days = collect();
+
                             foreach ($period as $date) {
                                 // bỏ qua Chủ nhật
                                 if ($date->dayOfWeek === Carbon::SUNDAY) {
                                     continue;
                                 }
 
+                                // 🧩 Logic phần buổi nghỉ
+                                if ($date->dayOfWeek === Carbon::SATURDAY) {
+                                    if ($role === 'staff') {
+                                        $partOfDay = 'morning';
+                                    } elseif (in_array($role, ['driver', 'assistant'])) {
+                                        $partOfDay = 'day';
+                                    } else {
+                                        // role khác (nếu có) thì tuỳ bạn muốn xử lý thế nào
+                                        $partOfDay = 'day';
+                                    }
+                                } else {
+                                    $partOfDay = 'day';
+                                }
+
                                 $day = AbsenceDay::create([
                                     'status' => 'pending',
                                     'absence_id' => $record->id,
                                     'date' => $date->format('Y-m-d'),
-                                    'part_of_day' => 'day', // day hoặc half
+                                    'part_of_day' => $partOfDay,
                                     'leave_type' => 'none',
                                 ]);
+
                                 $days->push($day);
                             }
                             $dayCount = $days->count();
