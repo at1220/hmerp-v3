@@ -259,6 +259,26 @@ class AbsenceRequestsTable
                                 ]);
                             }
                         }),
+                    EditAction::make('cancel')
+                        ->label('Huỷ đơn')
+                        ->color('danger')
+                        ->icon('heroicon-o-x-circle')
+                        ->visible(fn ($record) => $record->status !== 'cancel')
+                        ->requiresConfirmation() // 👈 chỉ hiển thị popup xác nhận
+                        ->modalHeading('Xác nhận huỷ đơn')
+                        ->modalDescription('Bạn có chắc chắn muốn huỷ đơn này không? Hành động này không thể hoàn tác.')
+                        ->modalSubmitActionLabel('Đồng ý huỷ')
+                        ->modalCancelActionLabel('Không huỷ')
+                        ->successNotificationTitle('Đơn đã được huỷ thành công!')
+                        ->schema([])
+                        ->action(function ($record) {
+                            $record->update([
+                                'status' => 'cancel',
+                            ]);
+                            AbsenceDay::where('absence_id', $record->id)->update([
+                                'status' => 'cancel',
+                            ]);
+                        }),
                 ])->icon('heroicon-m-cog-6-tooth')
                     ->label(''),
 
