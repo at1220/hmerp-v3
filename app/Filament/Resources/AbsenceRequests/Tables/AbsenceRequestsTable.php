@@ -8,6 +8,7 @@ use App\Models\AbsenceDay;
 use App\Models\AbsenceRequest;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -15,10 +16,15 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
@@ -264,21 +270,75 @@ class AbsenceRequestsTable
                         ->color('danger')
                         ->icon('heroicon-o-x-circle')
                         ->visible(fn ($record) => $record->status !== 'cancel')
-                        ->requiresConfirmation() // 👈 chỉ hiển thị popup xác nhận
-                        ->modalHeading('Xác nhận huỷ đơn')
-                        ->modalDescription('Bạn có chắc chắn muốn huỷ đơn này không? Hành động này không thể hoàn tác.')
-                        ->modalSubmitActionLabel('Đồng ý huỷ')
-                        ->modalCancelActionLabel('Không huỷ')
-                        ->successNotificationTitle('Đơn đã được huỷ thành công!')
-                        ->schema([])
-                        ->action(function ($record) {
+                        ->schema([
+                            Wizard::make([
+                                Step::make('Thông tin nhân viên')
+                                    ->schema([
+                                        // Các trường này sẽ được bao gồm trong mảng $data của Wizard
+                                        TextInput::make('status')
+                                            ->label('Trạng thái')
+                                            ->default('pending')
+                                            ->readOnly(), // Giả sử chỉ đọc ở đây
+                                        TextInput::make('user_name')->label('Nhân viên'),
+                                    ]),
+
+                                Step::make('Ngày nghỉ')
+                                    ->schema([
+                                        TextInput::make('from_date')->label('Từ ngày'),
+                                        TextInput::make('to_date')->label('Đến ngày'),
+
+                                        // Nút lưu riêng step
+                                        Action::make('save_step_2')
+                                            ->label('💾 Lưu thông tin ngày nghỉ')
+                                            ->color('success')
+                                            ->action(function ($record, $livewire) {
+                                                // $data bây giờ là toàn bộ state của Wizard
+                                                $mountedActions = collect($livewire->mountedActions ?? []);
+                                                $cancelAction = $mountedActions->firstWhere('name', 'cancel');
+
+                                                // 🟢 Lấy ra data của wizard chính
+                                                $wizardData = $cancelAction['data'] ?? [];
+
+                                                // 🔹 Lấy riêng phần step này
+                                                $stepData = collect($wizardData)->only(['from_date', 'to_date'])->toArray();
+
+                                                // 🧩 Cập nhật vào record
+                                                $record->update($stepData);
+
+                                                Notification::make()
+                                                    ->title('Đã lưu thông tin ngày nghỉ thành công!')
+                                                    ->body('Dữ liệu (Từ ngày, Đến ngày) đã được cập nhật.')
+                                                    ->success()
+                                                    ->send();
+                                            }),
+                                    ]),
+
+                                Step::make('Chi tiết nghỉ phép')
+                                    ->schema([
+                                        TextInput::make('total_day')->label('Số ngày'),
+                                        TextInput::make('reason')->label('Lý do'),
+                                        TextInput::make('description')->label('Ghi chú'),
+                                    ]),
+                            ])->skippable(),
+                        ])
+                        ->action(function (array $data, $record) {
+                            // Action cuối cùng khi nhấn Submit chính (hoặc Huỷ đơn)
+                            dd($data);
                             $record->update([
                                 'status' => 'cancel',
                             ]);
-                            AbsenceDay::where('absence_id', $record->id)->update([
+
+                            // Giả định AbsenceDay là một Model
+                            \App\Models\AbsenceDay::where('absence_id', $record->id)->update([
                                 'status' => 'cancel',
                             ]);
+
+                            Notification::make()
+                                ->title('Đã huỷ đơn thành công!')
+                                ->success()
+                                ->send();
                         }),
+
                 ])->icon('heroicon-m-cog-6-tooth')
                     ->label(''),
 
