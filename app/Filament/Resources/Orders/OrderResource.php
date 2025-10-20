@@ -38,6 +38,7 @@ class OrderResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
+        OrderForm::$isEditPage = true;
         return OrderForm::configure($schema);
     }
 
@@ -58,7 +59,7 @@ class OrderResource extends Resource
         return [
             'index' => ListOrders::route('/'),
             // 'create' => CreateOrder::route('/create'),
-            // 'edit' => EditOrder::route('/{record}/edit'),
+            'editpage' => EditOrder::route('/{record}/edit'),
         ];
     }
 

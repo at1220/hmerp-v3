@@ -6,6 +6,7 @@ use App\Enum\Order\HandlingMethod;
 use App\Enum\Order\TypeArise;
 use App\Enum\Order\TypeVehicle;
 use App\Models\User;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
@@ -13,8 +14,12 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Model;
@@ -447,12 +452,126 @@ class OrderForm
             ]);
     }
 
+    public static function editPageSection(): array
+    {
+        return [
+            Wizard::make([
+                Step::make('Thông tin nhân viên')
+                    ->columns(2)
+                    ->schema([
+                        // Các trường này sẽ được bao gồm trong mảng $data của Wizard
+                        Fieldset::make('2. Thống tin điểm lên')
+                            ->schema([
+                                TextEntry::make('status')
+                                    ->label('Trạng thái')->color('primary'), // Giả sử chỉ đọc ở đây
+                                TextEntry::make('staff.name')
+                                    ->label('Nhân viên chốt đơn')->color('primary'),
+                            ]),
+                        Fieldset::make('2. Thống tin điểm lên')
+                            ->schema([
+                                TextInput::make('status')
+                                    ->label('Trạng thái')
+                                    ->default('pending')
+                                    ->readOnly(), // Giả sử chỉ đọc ở đây
+                                Select::make('staff_id')
+                                    ->label('Nhân viên chốt đơn')
+                                    ->searchable()
+                                    ->required()
+                                    ->preload()
+                                    ->default(Auth::user()->id)
+                                    ->options(User::pluck('name', 'id')),
+                            ]),
+
+                    ]),
+
+                Step::make('ABC')
+                    ->columns(2)
+                    ->schema([
+                        Fieldset::make('2. Thống tin điểm lên')
+                            ->columns(1)
+                            ->schema([
+                                TextEntry::make('text')
+                                    ->label('Trạng thái')->color('primary')->inlineLabel()->default('Đây là đơn thử nghiệm nội bộ, không cần duyệt.'), // Giả sử chỉ đọc ở đây
+                                TextEntry::make('staff.name')
+                                    ->label('Nhân viên chốt đơn')->color('primary')->inlineLabel(),
+                            ]),
+                        Fieldset::make('2. Thống tin điểm lên')
+                            ->columns(1)
+                            ->schema([
+                                TextInput::make('status')
+                                    ->label('Trạng thái')->inlineLabel()
+                                    ->default('pending'), // Giả sử chỉ đọc ở đây
+                                Select::make('staff_id')
+                                    ->label('Nhân viên ')
+                                    ->searchable()->inlineLabel()
+                                    ->required()
+                                    ->preload()
+                                    ->default(Auth::user()->id)
+                                    ->options(User::pluck('name', 'id')),
+                                Action::make('save_step_2')
+                                    ->label('💾 Lưu')
+                                    ->color('success')
+                                    ->action(function ($record, $state) {
+                                        // $data bây giờ là toàn bộ state của Wizard
+
+                                        $stepData = collect($state)->only(['status', 'staff_id'])->toArray();
+                                        // 🧩 Cập nhật vào record
+                                        $record->update($stepData);
+                                        $recipient = $record->staff;
+                                        Notification::make()
+                                            ->title('Đã lưu thông tin ngày nghỉ thành công!')
+                                            ->body('Dữ liệu (Từ ngày, Đến ngày) đã được cập nhật.')
+                                            ->success()
+                                            ->sendToDatabase($recipient);
+                                    }),
+                            ]),
+
+                        // Nút lưu riêng step
+
+                    ]),
+
+                Step::make('Chi tiết nghỉ phép')
+                    ->columns(2)
+                    ->schema([
+                        Fieldset::make('2. Thống tin điểm lên')
+                            ->schema([
+                                TextEntry::make('status')
+                                    ->label('Trạng thái')->color('primary'), // Giả sử chỉ đọc ở đây
+                                TextEntry::make('staff.name')
+                                    ->label('Nhân viên chốt đơn')->color('primary'),
+                            ]),
+                        Fieldset::make('2. Thống tin điểm lên')
+                            ->schema([
+                                TextInput::make('status')
+                                    ->label('Trạng thái')
+                                    ->default('pending')
+                                    ->readOnly(), // Giả sử chỉ đọc ở đây
+                                Select::make('staff_id')
+                                    ->label('Nhân viên chốt đơn')
+                                    ->searchable()
+                                    ->required()
+                                    ->preload()
+                                    ->default(Auth::user()->id)
+                                    ->options(User::pluck('name', 'id')),
+                            ]),
+                    ]),
+            ])->skippable()->columnSpanFull()->persistStepInQueryString(),
+
+        ];
+    }
+
+    public static bool $isEditPage = false;
+
     public static function configure(Schema $schema): Schema
     {
 
+        if (self::$isEditPage) {
+            return $schema->components(self::editPageSection()); // chỉ baseComponents
+        }
+
         return $schema->components(array_merge(
             self::baseComponents(),
-            [self::tripSection(), self::containerSection()] // mặc định nếu bạn muốn
+            [self::tripSection(), self::containerSection()]
         ));
     }
 }

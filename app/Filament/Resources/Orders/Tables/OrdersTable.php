@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Orders\Tables;
 
 use App\Enum\Order\Type;
+use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Resources\Orders\Schemas\OrderForm;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -81,18 +82,26 @@ class OrdersTable
 
                 ActionGroup::make([
                     //
-                    ViewAction::make('viewTrip')
-                        ->label('xem Đơn hàng chuyến')
-                        ->modalHeading('Chi tiết đơn')
+                    EditAction::make('editpage')
+                        ->label('Mở trang sửa')
+                        ->icon('heroicon-o-arrow-top-right-on-square')
+                        ->url(fn ($record) => OrderResource::getUrl('editpage', ['record' => $record]))
                         ->schema(array_merge(
                             OrderForm::baseComponents(),
-                            [OrderForm::tripSection(), OrderForm::billingTripSection()]
                         ))
-                        ->visible(fn ($record) => $record->type == Type::Trip)
-                        ->mutateRecordDataUsing(function (array $data): array {
+                        ->openUrlInNewTab(false),
+                    // ViewAction::make('viewTrip')
+                    //     ->label('xem Đơn hàng chuyến')
+                    //     ->modalHeading('Chi tiết đơn')
+                    //     ->schema(array_merge(
+                    //         OrderForm::baseComponents(),
+                    //         [OrderForm::tripSection(), OrderForm::billingTripSection()]
+                    //     ))
+                    //     ->visible(fn ($record) => $record->type == Type::Trip)
+                    //     ->mutateRecordDataUsing(function (array $data): array {
 
-                            return $data;
-                        }),
+                    //         return $data;
+                    //     }),
                     EditAction::make('editTrip')
                         ->label('Đơn hàng chuyến')
                         ->modalDescription('Đây là sửa')
