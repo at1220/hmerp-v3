@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AbsenceRequests\Tables;
 
+use App\Filament\Resources\AbsenceRequests\Pages\ViewDays;
 use App\Filament\Resources\AbsenceRequests\Schemas\AbsenceRequestForm;
 use App\Models\AbsenceApproval;
 use App\Models\AbsenceDay;
@@ -15,11 +16,11 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
-use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
@@ -29,6 +30,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -74,11 +76,15 @@ class AbsenceRequestsTable
             ->recordActions([
 
                 ActionGroup::make([
-                    ViewAction::make('view')
+                    Action::make('viewDays')
+                        ->label('Xem chi tiết ngày nghỉ')
+                        ->icon('heroicon-o-calendar-days')
+                        ->url(fn ($record) => ViewDays::getUrl(['record' => $record])),
+                    EditAction::make('view')
                         ->label('Xem chi tiết')
                         ->icon('heroicon-o-eye')
                         ->modalHeading('Chi tiết đơn nghỉ')
-                        ->modalWidth('2xl')
+                        ->modalWidth('7xl')
                         ->schema([
                             Grid::make(2)
                                 ->schema([
@@ -107,19 +113,32 @@ class AbsenceRequestsTable
                                         ->inlineLabel()
                                         ->color('primary'),
                                 ]),
-                            RepeatableEntry::make('day') // relation `day()`
+                            Repeater::make('day') // relation `day()`
+                                ->relationship('day', fn (Builder $query) => $query->where('status', '!=', 'DDa'))
                                 ->label('Ngày nghỉ')
+                                ->addable(false)->deletable(false)
                                 ->table([
+                                    TableColumn::make('Chọn'),
                                     TableColumn::make('Ngày'),
                                     TableColumn::make('Buổi'),
                                     TableColumn::make('Trạng thái'),
                                 ])
                                 ->schema([
+
+                                    Checkbox::make('check'),
                                     TextEntry::make('date')->date('d/m/Y'),
                                     TextEntry::make('part_of_day'),
                                     TextEntry::make('status')->color('primary'),
-                                ]),
+                                    TextInput::make('id')->hidden(),
+                                ])
+                                ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
+                                    if ($data['check'] == true) {
+                                        $data['status'] = 'DDa';
+                                    }
+                                    unset($data['check']);
 
+                                    return $data;
+                                }),
                         ]),
                     EditAction::make('edit_one_day')
                         ->modalHeading('Cập nhật')

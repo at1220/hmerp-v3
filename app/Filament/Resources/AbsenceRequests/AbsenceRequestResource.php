@@ -5,6 +5,8 @@ namespace App\Filament\Resources\AbsenceRequests;
 use App\Filament\Resources\AbsenceRequests\Pages\CreateAbsenceRequest;
 use App\Filament\Resources\AbsenceRequests\Pages\EditAbsenceRequest;
 use App\Filament\Resources\AbsenceRequests\Pages\ListAbsenceRequests;
+use App\Filament\Resources\AbsenceRequests\Pages\ViewDays;
+use App\Filament\Resources\AbsenceRequests\RelationManagers\DayRelationManager;
 use App\Filament\Resources\AbsenceRequests\Schemas\AbsenceRequestForm;
 use App\Filament\Resources\AbsenceRequests\Tables\AbsenceRequestsTable;
 use App\Models\AbsenceRequest;
@@ -49,7 +51,7 @@ class AbsenceRequestResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            'view-detail' => DayRelationManager::class,
         ];
     }
 
@@ -59,6 +61,7 @@ class AbsenceRequestResource extends Resource
             'index' => ListAbsenceRequests::route('/'),
             // 'create' => CreateAbsenceRequest::route('/create'),
             // 'edit' => EditAbsenceRequest::route('/{record}/edit'),
+            'view-days' => ViewDays::route('/{record}/view-days'),
         ];
     }
 
