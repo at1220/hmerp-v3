@@ -6,6 +6,9 @@ use App\Models\AbsenceDay;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -24,7 +27,7 @@ class AbsenceDaysTable
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('date')
-                    ->date()
+                    ->date('d/m/y')
                     ->sortable(),
                 TextColumn::make('part_of_day')
                     ->searchable(),
@@ -68,6 +71,29 @@ class AbsenceDaysTable
                                 ->send();
                         })
                         ->visible(fn ($record) => $record->status !== 'cancel'),
+                    EditAction::make('view')
+                        ->icon('heroicon-o-eye')
+                        ->modalHeading('Chỉnh sửa đơn nghỉ')
+                        ->modalWidth('7xl')
+                        ->schema([
+                            DatePicker::make('date')
+                                ->label('📅 Ngày nghỉ')
+                                ->displayFormat('d/m/Y')
+                                ->format('Y-m-d')
+                                ->native(false)
+                                ->required(),
+                            Select::make('part_of_day')
+                                ->label('📝 Thời gian nghỉ')
+                                ->options([
+                                    'day' => 'Nghỉ cả ngày',
+                                    'morning' => 'Nghỉ buổi sáng',
+                                    'afternoon' => 'Nghỉ buổi chiều',
+                                ])
+                                ->required()
+                                ->hidden(fn (string $operation): bool => $operation == 'create_one_day')
+                                ->default('day'),
+                        ]),
+
                 ]),
             ])
             ->toolbarActions([

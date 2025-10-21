@@ -35,7 +35,7 @@ class ViewDays extends Page implements HasTable
         // 2. Chỉ định Query cho bảng (phải ở đây vì cần $this->record)
         return $table
             ->query(
-                $this->record->day()->getQuery()
+                $this->record->day()->getQuery()->where('status', '!=', 'cancel')
             );
 
         // Lưu ý: Các phần ->columns(), ->filters(), ->defaultSort()
